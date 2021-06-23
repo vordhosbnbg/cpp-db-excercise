@@ -4,8 +4,8 @@ project (matrixshapes)
 
 set (Project_INCLUDE_DIRS "CPPCraftDemo")
 
-add_executable(CPPCraftDemo
-    "CPPCraftDemo/CPPCraftDemo.cpp"
+add_executable(benchmark
+    "CPPCraftDemo/benchmark.cpp"
     )
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 20)
