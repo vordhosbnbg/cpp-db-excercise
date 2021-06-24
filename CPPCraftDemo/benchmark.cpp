@@ -5,13 +5,7 @@
 #include <functional>
 #include "qbrecord.h"
 #include "indexdb.h"
-
-#ifdef __GNUG__
-#include <cxxabi.h>
-#define DEMANGLE(x) abi::__cxa_demangle(x, NULL, NULL, NULL)
-#else
-#define DEMANGLE(x) x
-#endif
+#include "demangle.h"
 
 /**
     Utility to populate a record collection
@@ -20,27 +14,41 @@
 */
 
 template<class Collection, class Record>
-Collection populateDummyData(const std::string& prefix, int numRecords, int repeatEach)
+Collection populateDummyData(const std::string& prefix, unsigned int numRecords, int repeatEach)
 {
     Collection data;
     data.reserve(numRecords);
 
-    for (uint i = 0; i < numRecords; i++)
+    for (unsigned int id = 0; id < numRecords; ++id)
     {
-        Record rec = { i, prefix + std::to_string(i), i % repeatEach, std::to_string(i) + prefix };
+        Record rec = { id, prefix + std::to_string(id), id % repeatEach, std::to_string(id) + prefix };
         data.emplace_back(rec);
     }
     return data;
 }
 
 
+// Starting from id 0 and increasing by interval,
+// attempts to delete records from the collection
+template<class Collection>
+void deleteEeachIds(Collection& collection, unsigned int numRecords, unsigned int interval)
+{
+    for(unsigned int id = 0; id < numRecords; id += interval)
+    {
+        collection.deleteById(id);
+    }
+}
 
+
+// Inserts numRecords
+// Does 3 filtering operations on the three non-id columns
+// Deletes 5% of the records
 template<class Collection,
          class Record,
          int numRecords>
 void doFindTest()
 {
-    static_assert(numRecords > 1000, "numRecords should be > 1000");
+    static_assert(numRecords >= 1000, "numRecords should be > 1000");
     static_assert(numRecords % 1000 == 0, "numRecords should be divisible to 1000");
     using namespace std::chrono;
     constexpr size_t freq1 = numRecords/20;
@@ -52,7 +60,7 @@ void doFindTest()
     auto startTimer = high_resolution_clock::now();
     Collection data = populateDummyData<Collection, Record>("testdata", numRecords, repeatEach);
     auto endTimer = high_resolution_clock::now();
-    std::cout << "Time for insertion"
+    std::cout << "Time for insertion of " << data.size() << " records: "
               << double((endTimer - startTimer).count()) *
                  high_resolution_clock::period::num /
                  high_resolution_clock::period::den
@@ -64,16 +72,32 @@ void doFindTest()
     std::string stringKey = "testdata" + std::to_string(freq1);
     std::string numKey = std::to_string(freq2);
     startTimer = high_resolution_clock::now();
-    Collection filteredSet = data.filter("column1", stringKey);
-    Collection filteredSet2 = data.filter("column2", numKey);
+    std::vector<Record> filteredSet = data.filter("column1", stringKey);
+    std::vector<Record> filteredSet2 = data.filter("column2", numKey);
+    std::vector<Record> filteredSet3 = data.filter("column3", "66testdata");
     endTimer = high_resolution_clock::now();
-    bool valid = (filteredSet.size() == 11) && (filteredSet2.size() == numRecords/repeatEach);
-    std::cout << "Time for 2 filter operations:"
+    bool valid = (filteredSet.size() == 11) &&
+                 (filteredSet2.size() == numRecords/repeatEach) &&
+                 (filteredSet3.size() == numRecords/100);
+    std::cout << "Time for 3 filter operations, returning " << filteredSet.size()
+              << ", " << filteredSet2.size() << " and " << filteredSet3.size() << " records : "
               << double((endTimer - startTimer).count()) *
                  high_resolution_clock::period::num /
                  high_resolution_clock::period::den
               << " sec."
               << std::endl;
+
+    startTimer = high_resolution_clock::now();
+    deleteEeachIds(data, numRecords, 20);
+    endTimer = high_resolution_clock::now();
+    valid = valid && (data.size() == numRecords * 0.95);
+    std::cout << "Time for deleting 10% of the records (remaining - " << data.size() << ") : "
+              << double((endTimer - startTimer).count()) *
+                 high_resolution_clock::period::num /
+                 high_resolution_clock::period::den
+              << " sec."
+              << std::endl;
+
 
     std::cout << "Result: " << (valid ? "OK" : "NOK") << std::endl;
 }
@@ -87,8 +111,12 @@ int main()
                100000>();
 
 
-    doFindTest<IndexDb<5>,
-               IndexDb<5>::Record,
+    doFindTest<IndexDb<100>,
+               IndexDb<100>::Record,
+               100000>();
+
+    doFindTest<IndexDb<10>,
+               IndexDb<10>::Record,
                100000>();
 
     return 0;

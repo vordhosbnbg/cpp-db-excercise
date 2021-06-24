@@ -1,11 +1,15 @@
 cmake_minimum_required (VERSION 3.1)
 
-project (matrixshapes)
+project (CPPCraftDemo)
 
 set (Project_INCLUDE_DIRS "CPPCraftDemo")
 
 add_executable(benchmark
     "CPPCraftDemo/benchmark.cpp"
+    )
+
+add_executable(unit_test
+    "CPPCraftDemo/unit_test.cpp"
     )
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 20)

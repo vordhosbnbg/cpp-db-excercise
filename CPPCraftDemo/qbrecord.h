@@ -59,6 +59,21 @@ public:
         });
         return result;
     }
+
+    bool deleteById(int id)
+    {
+        bool result = false;
+        for(auto it = begin(); it != end(); ++it)
+        {
+            if((*it).column0 == id)
+            {
+                erase(it);
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
 };
 
 
