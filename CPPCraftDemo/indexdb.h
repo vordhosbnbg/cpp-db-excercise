@@ -6,6 +6,11 @@
 #include <unordered_set>
 #include <algorithm>
 
+
+// The IndexDb class uses id-to-Record map as a base storage
+// and indexes for the other columns - key-to-id
+// with minIndexSize template parameter specifying the minimum size
+// for which a partial key index is done
 template<size_t minIndexSize = 5>
 class IndexDb
 {
@@ -18,12 +23,13 @@ public:
         std::string column3;
     };
 
-    using StorageMap = std::unordered_map<unsigned int, Record>;
-    using RecordSet = std::unordered_set<unsigned int>;
-    using NumIndex = std::unordered_map<long, RecordSet>;
-    using StringIndex = std::unordered_map<std::string, RecordSet>;
-    using QueryResult = std::vector<Record>;
+    using StorageMap = std::unordered_map<unsigned int, Record>; // base id->Record storage
+    using RecordSet = std::unordered_set<unsigned int>; // a set of record Ids
+    using NumIndex = std::unordered_map<long, RecordSet>; // long->id set
+    using StringIndex = std::unordered_map<std::string, RecordSet>; // Partial key->id set index
+    using QueryResult = std::vector<Record>; // What we return on a query
 
+    // mirrors the std::vector naming
     void emplace_back(const Record& rec)
     {
         auto result = _storage.try_emplace(rec.column0, rec);
@@ -35,6 +41,7 @@ public:
         }
     }
 
+    // Reserves storage for the buckets in the unordered_maps
     void reserve(size_t elements)
     {
         _storage.reserve(elements);
@@ -43,6 +50,7 @@ public:
         _col3_idx.reserve(elements);
     }
 
+    // Delete a record by id and all indexes pointing to it
     void deleteById(int id)
     {
         auto it = _storage.find(id);
@@ -63,15 +71,17 @@ public:
         }
     }
 
+    // return number of records
     size_t size() const
     {
         return _storage.size();
     }
 
+    // queries the records on different columns, supporting partial key search on string types
     QueryResult filter(const std::string& colName, const std::string& value) const
     {
         QueryResult result;
-        if(colName == "column0")
+        if(colName == "column0") // column0 is returned directly from the base map
         {
             int id = std::stoul(value);
             auto it = _storage.find(id);
@@ -80,17 +90,18 @@ public:
                 result.emplace_back(it->second);
             }
         }
-        else if(colName == "column2")
+        else if(colName == "column2") // column2 is always returned from index
         {
             getResultsForQuery(_col2_idx, std::stol(value), result);
         }
         else if(value.size() < minIndexSize)
         {
+            // for text columns if the key is less than the minIndexSize
+            // a normal search is done
             getResultsForQueryNoIndex(colName, value, result);
         }
-        else if(colName == "column1")
+        else if(colName == "column1") // otherwise the column partial index maps are used
         {
-
             getResultsForQuery(_col1_idx, value, result);
         }
         else if(colName == "column3")
@@ -104,6 +115,7 @@ public:
 protected:
 
 
+    // Iterates trough all records returning only matching records
     void getResultsForQueryNoIndex(const std::string& column,
                                    const std::string& value,
                                    QueryResult& result) const
@@ -151,6 +163,7 @@ protected:
         }
     }
 
+    // Returns matching records directly from the indexed maps
     template<class Index, class Value>
     void getResultsForQuery(const Index& idx,
                             const Value& value,
@@ -173,6 +186,7 @@ protected:
         }
     }
 
+    // Used to generate all combination of partial keys and either insert an id or remove it
     void insertOrRemoveAllPartialStringKeys(StringIndex& stringIdx,
                                             const std::string& fullKey,
                                             unsigned int id,

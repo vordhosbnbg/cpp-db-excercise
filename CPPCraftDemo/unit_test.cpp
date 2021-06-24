@@ -12,8 +12,6 @@ bool checkFn(const std::string& checkText, bool statement)
 #define TEST_CHECK(x) checkFn(#x, (x))
 
 
-
-
 template<class Collection,
          class Record>
 void executeTests()
@@ -52,8 +50,8 @@ void executeTests()
 int main()
 {
 
-    executeTests<QBRecordCollection,
-                 QBRecord>();
+     executeTests<QBRecordCollection,
+                  QBRecord>();
 
 
      executeTests<IndexDb<100>,

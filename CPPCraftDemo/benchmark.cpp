@@ -3,6 +3,7 @@
 #include <ratio>
 #include <typeinfo>
 #include <functional>
+#include <iomanip>
 #include "qbrecord.h"
 #include "indexdb.h"
 #include "demangle.h"
@@ -55,6 +56,8 @@ void doFindTest()
     constexpr size_t freq2 = 500;
     constexpr int repeatEach = 1000;
     // populate a bunch of data
+    std::cout.setf(std::ios::fixed, std::ios::floatfield);
+    std::cout.setf(std::ios::showpoint);
     std::cout << "Collection type " << DEMANGLE(typeid(Collection).name())
                   << ",  recordType " << DEMANGLE(typeid(Record).name()) << std::endl;
     auto startTimer = high_resolution_clock::now();
@@ -91,7 +94,7 @@ void doFindTest()
     deleteEeachIds(data, numRecords, 20);
     endTimer = high_resolution_clock::now();
     valid = valid && (data.size() == numRecords * 0.95);
-    std::cout << "Time for deleting 10% of the records (remaining - " << data.size() << ") : "
+    std::cout << "Time for deleting 5% of the records (remaining - " << data.size() << ") : "
               << double((endTimer - startTimer).count()) *
                  high_resolution_clock::period::num /
                  high_resolution_clock::period::den
@@ -108,16 +111,16 @@ int main()
 
     doFindTest<QBRecordCollection,
                QBRecord,
-               100000>();
+               50000>();
 
 
     doFindTest<IndexDb<100>,
                IndexDb<100>::Record,
-               100000>();
+               50000>();
 
     doFindTest<IndexDb<10>,
                IndexDb<10>::Record,
-               100000>();
+               50000>();
 
     return 0;
 }
