@@ -48,9 +48,9 @@ Optionally any partial key for data in `column1` and `column3` above a set `minI
 Note: In the original example, the `QBFindMatchingRecords()` method returns the same type as the initial collection, but my assumption in attempts to optimize it, was that the intention for the filter function is to return a container of records, not necessarily a filterable collection of its own, so a `std::vector<Record>` is expected everywhere.
 
 ### Advantages
- - very fast query times
+ - very fast query times (50x times the original)
  - configurable, so the partial string indexing can be limited
- - still faster if no partial string indexing is used
+ - still faster if no partial string indexing is used (7x faster)
 
 ### Disadvantages
  - slower insertion, especially when partial index is used
