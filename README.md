@@ -20,7 +20,7 @@ In it the filtering function is as implemented a class method and a naive delete
 
 Binary: `unit_test`
 
-A simple template for running a test scenario - add, filter and delete records from a database have been implemented.
+A simple template for running a test scenario - add, filter and delete records from a database are tested.
 
 
 ## Benchmarking
